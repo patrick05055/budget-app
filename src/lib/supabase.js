@@ -39,7 +39,7 @@ export function toWeekly(amount, freq) {
 
 export async function loadData() {
   const { data, error } = await supabase
-    .table('dashboard_data')
+    .from('dashboard_data')
     .select('data')
     .eq('id', 'main')
     .single()
@@ -57,13 +57,13 @@ export async function loadData() {
 
 export async function saveData(payload) {
   await supabase
-    .table('dashboard_data')
+    .from('dashboard_data')
     .upsert({ id: 'main', data: payload })
 }
 
 export async function loadHistory() {
   const { data } = await supabase
-    .table('weekly_history')
+    .from('weekly_history')
     .select('*')
     .order('week_of', { ascending: false })
   return data || []
