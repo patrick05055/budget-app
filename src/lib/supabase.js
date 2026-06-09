@@ -91,7 +91,7 @@ export async function archiveWeek(log, expenses, spendCats) {
   const totalSpent  = Object.values(spends).reduce((a, b) => a + b, 0)
   const totalBudget = Object.values(budgets).reduce((a, b) => a + b, 0)
   const week_of     = log.week_of || today()
-  await supabase.table('weekly_history').upsert({
+  await supabase.from('weekly_history').upsert({
     week_of,
     month:          week_of.slice(0, 7),
     grocery_spent:  +spends.groceries.toFixed(2),
