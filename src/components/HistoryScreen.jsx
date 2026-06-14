@@ -27,21 +27,119 @@ function weekLabelForBest(weekOf) {
   return weekLabel(weekOf).primary
 }
 
-// ── AI Button ─────────────────────────────────────────────────────────────────
+// ── AI Insights Card ──────────────────────────────────────────────────────────
 
-function AIButton({ prompt, topOfCard }) {
+const GRADE_COLORS = {
+  A: { bg: 'var(--green-soft)', color: 'var(--green)' },
+  B: { bg: 'var(--green-soft)', color: 'var(--green)' },
+  C: { bg: 'var(--amber-soft)', color: 'var(--amber)' },
+  D: { bg: 'var(--red-soft)',   color: 'var(--red)' },
+  F: { bg: 'var(--red-soft)',   color: 'var(--red)' },
+}
+
+function gradeColor(grade) {
+  const letter = grade?.[0]?.toUpperCase() || 'C'
+  return GRADE_COLORS[letter] || GRADE_COLORS['C']
+}
+
+function AIInsightsDisplay({ data }) {
+  const gc = gradeColor(data.grade)
+  return (
+    <div style={{ marginTop: 4 }}>
+      {/* Grade + verdict */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        background: gc.bg, borderRadius: 'var(--radius)', padding: '14px 16px', marginBottom: 10,
+      }}>
+        <div style={{
+          fontSize: '2rem', fontWeight: 700, color: gc.color,
+          fontFamily: "'DM Mono', monospace", lineHeight: 1, minWidth: 48,
+        }}>
+          {data.grade}
+        </div>
+        <div style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5 }}>
+          {data.verdict}
+        </div>
+      </div>
+
+      {/* Overspending */}
+      {data.overspending?.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Where it went
+          </div>
+          {data.overspending.map((item, i) => (
+            <div key={i} style={{
+              display: 'flex', gap: 12, padding: '10px 14px',
+              background: 'var(--red-soft)', borderRadius: 'var(--radius-sm)', marginBottom: 6,
+            }}>
+              <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 2 }}>{item.title}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-2)', lineHeight: 1.5 }}>{item.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Actions */}
+      {data.actions?.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Next week
+          </div>
+          {data.actions.map((item, i) => (
+            <div key={i} style={{
+              display: 'flex', gap: 12, padding: '10px 14px',
+              background: 'var(--green-soft)', borderRadius: 'var(--radius-sm)', marginBottom: 6,
+            }}>
+              <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 2 }}>{item.title}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-2)', lineHeight: 1.5 }}>{item.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Comparison */}
+      {data.comparison && (
+        <div style={{
+          padding: '10px 14px', background: 'var(--purple-soft)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '0.78rem', color: 'var(--text-2)', lineHeight: 1.5,
+        }}>
+          <span style={{ fontWeight: 600, color: 'var(--purple)' }}>📊 vs. prior weeks  </span>
+          {data.comparison}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AIButton({ prompt }) {
   const [state, setState] = useState('idle')
-  const [result, setResult] = useState(null)
+  const [parsed, setParsed] = useState(null)
+  const [raw, setRaw] = useState(null)
 
   const handleClick = async () => {
     setState('loading')
     const text = await getAIInsights(prompt)
-    setResult(text)
-    setState('done')
+    try {
+      const clean = text.replace(/```json|```/g, '').trim()
+      const data = JSON.parse(clean)
+      setParsed(data)
+      setState('done')
+    } catch {
+      setRaw(text)
+      setState('done')
+    }
   }
 
   return (
-    <div style={{ marginBottom: topOfCard ? 14 : 0, marginTop: topOfCard ? 0 : 12 }}>
+    <div style={{ marginBottom: 14 }}>
       {state !== 'done' && (
         <button
           className="btn btn-ghost btn-sm"
@@ -54,9 +152,8 @@ function AIButton({ prompt, topOfCard }) {
             : '🤖 Get AI insights'}
         </button>
       )}
-      {state === 'done' && result && (
-        <div className="ai-block">{result}</div>
-      )}
+      {state === 'done' && parsed && <AIInsightsDisplay data={parsed} />}
+      {state === 'done' && raw && <div className="ai-block">{raw}</div>}
     </div>
   )
 }
@@ -104,7 +201,7 @@ function WeekCard({ week }) {
           borderRadius: '0 0 var(--radius) var(--radius)', padding: 16, marginTop: -8, marginBottom: 8,
         }}>
           {/* AI insights at the TOP */}
-          <AIButton prompt={weeklyPrompt(week)} topOfCard />
+          <AIButton prompt={weeklyPrompt(week)} />
 
           <div className="divider" style={{ margin: '12px 0' }} />
 
@@ -245,7 +342,7 @@ function MonthBlock({ monthStr, weeks }) {
           </div>
         </div>
 
-        <AIButton prompt={monthlyPrompt(monthStr, weeks)} topOfCard={false} />
+        <AIButton prompt={monthlyPrompt(monthStr, weeks)} />
       </div>
 
       {/* Week cards — most recent first */}

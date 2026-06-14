@@ -131,7 +131,7 @@ export function weeklyPrompt(week) {
     const items = (week[k] || []).map((i) => `${i.label} ($${i.amount.toFixed(2)})`).join(', ') || 'none'
     return `${label}: spent $${sp.toFixed(2)} / $${bu.toFixed(2)} (${pct}%) | items: ${items}`
   }
-  return `You are a personal finance analyst. Give detailed, analytical suggestions for this week of spending.
+  return `You are a professional personal finance advisor. Analyse this weekly spending report and respond ONLY with a JSON object — no markdown, no backticks, no preamble.
 
 Week of: ${week.week_of}
 ${fmt('groceries','Groceries','grocery_spent','grocery_budget')}
@@ -139,7 +139,21 @@ ${fmt('fun','Fun/Rest','fun_spent','fun_budget')}
 ${fmt('health','Health & Personal Care','health_spent','health_budget')}
 Total: $${week.total_spent?.toFixed(2)} / $${week.total_budget?.toFixed(2)} (${week.total_spent > week.total_budget ? 'OVER' : 'under'} budget)
 
-Give 3-5 specific suggestions referencing actual items and amounts. Number each suggestion.`
+Return exactly this JSON structure:
+{
+  "grade": "B+",
+  "verdict": "One sentence professional summary of the week.",
+  "overspending": [
+    { "icon": "🛒", "title": "Category name", "detail": "What went over and why it matters, referencing specific amounts." }
+  ],
+  "actions": [
+    { "icon": "✅", "title": "Action title", "detail": "Specific action to take next week with target amount." }
+  ],
+  "comparison": "One sentence comparing this week to typical spending patterns or prior weeks if data exists. If no prior data, give a benchmark comparison instead."
+}
+
+Grade scale: A = under 90% of budget, B = 90-100%, C = 100-120%, D = 120-150%, F = over 150%.
+Include 1-3 overspending items (only categories that went over). Include exactly 3 actions.`
 }
 
 export function monthlyPrompt(monthStr, weeks) {
@@ -148,13 +162,26 @@ export function monthlyPrompt(monthStr, weeks) {
   const worst = weeks.reduce((a, b) => (a.total_spent/a.total_budget) > (b.total_spent/b.total_budget) ? a : b)
   const wkLines = [...weeks].sort((a,b) => a.week_of.localeCompare(b.week_of))
     .map((w) => `  Week ${w.week_of}: $${w.total_spent?.toFixed(2)} / $${w.total_budget?.toFixed(2)}`).join('\n')
-  return `You are a personal finance analyst. Analyse this full calendar month and give detailed, analytical insights.
+  return `You are a professional personal finance advisor. Analyse this calendar month and respond ONLY with a JSON object — no markdown, no backticks, no preamble.
 
 Month: ${monthStr} | Weeks tracked: ${weeks.length}
 Groceries: $${sum('grocery_spent').toFixed(2)} | Fun/Rest: $${sum('fun_spent').toFixed(2)} | Health: $${sum('health_spent').toFixed(2)}
 Total: $${sum('total_spent').toFixed(2)} / $${sum('total_budget').toFixed(2)}
-Best week: ${best.week_of} | Worst week: ${worst.week_of}
+Best week: ${best.week_of} ($${best.total_spent?.toFixed(2)}) | Worst: ${worst.week_of} ($${worst.total_spent?.toFixed(2)})
 ${wkLines}
 
-Give 4-6 analytical insights referencing specific weeks and amounts. End with one concrete goal for next month.`
+Return exactly this JSON structure:
+{
+  "grade": "B",
+  "verdict": "One sentence professional monthly summary.",
+  "overspending": [
+    { "icon": "🛒", "title": "Category", "detail": "What drove overspending this month with amounts." }
+  ],
+  "actions": [
+    { "icon": "✅", "title": "Action title", "detail": "Specific goal for next month with target amount." }
+  ],
+  "comparison": "One sentence comparing best vs worst week and what drove the difference."
+}
+
+Grade scale: A = under 90% of budget, B = 90-100%, C = 100-120%, D = 120-150%, F = over 150%.`
 }
