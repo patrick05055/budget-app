@@ -4,29 +4,27 @@ import ProgressBar from './ProgressBar.jsx'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function weekLabel(weekOf, allWeeksInMonth) {
-  // weekOf is "YYYY-MM-DD" (the start of the week)
+function weekLabel(weekOf) {
   const date = new Date(weekOf + 'T00:00:00')
-  const month = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const day = date.getDate()
 
-  // Sort all weeks in this month ascending to find the week number
-  const sorted = [...allWeeksInMonth].sort((a, b) => a.week_of.localeCompare(b.week_of))
-  const weekNum = sorted.findIndex((w) => w.week_of === weekOf) + 1
-
-  // Compute end of week (start + 6 days)
-  const end = new Date(date)
-  end.setDate(end.getDate() + 6)
-  const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const startStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  // Calendar week: days 1-7 = week 1, 8-14 = week 2, 15-21 = week 3, 22+ = week 4
+  const weekNum = Math.ceil(day / 7)
+  const startDay = (weekNum - 1) * 7 + 1
+  const endDay = Math.min(weekNum * 7, new Date(year, month + 1, 0).getDate())
+  const monthShort = date.toLocaleDateString('en-US', { month: 'short' })
+  const monthLong  = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
   return {
-    primary: `Week ${weekNum} of ${month}`,
-    range: `${startStr} – ${endStr}`,
+    primary: `Week ${weekNum} of ${monthLong}`,
+    range:   `${monthShort} ${startDay} – ${monthShort} ${endDay}`,
   }
 }
 
-function weekLabelForBest(weekOf, allWeeksInMonth) {
-  return weekLabel(weekOf, allWeeksInMonth).primary
+function weekLabelForBest(weekOf) {
+  return weekLabel(weekOf).primary
 }
 
 // ── AI Button ─────────────────────────────────────────────────────────────────
@@ -65,10 +63,10 @@ function AIButton({ prompt, topOfCard }) {
 
 // ── Week Card ─────────────────────────────────────────────────────────────────
 
-function WeekCard({ week, allWeeksInMonth }) {
+function WeekCard({ week }) {
   const [open, setOpen] = useState(false)
   const over = week.total_spent > week.total_budget
-  const { primary, range } = weekLabel(week.week_of, allWeeksInMonth)
+  const { primary, range } = weekLabel(week.week_of)
 
   const cats = [
     { key: 'groceries', label: '🛒 Groceries', sk: 'grocery_spent',  bk: 'grocery_budget', color: 'var(--green)' },
@@ -233,14 +231,14 @@ function MonthBlock({ monthStr, weeks }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
           <div style={{ background: 'var(--green-soft)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
             <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--green)', marginBottom: 2 }}>🏆 BEST WEEK</div>
-            <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{weekLabelForBest(best.week_of, weeks)}</div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{weekLabelForBest(best.week_of)}</div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.78rem', color: 'var(--text-2)' }}>
               ${best.total_spent?.toFixed(2)}
             </div>
           </div>
           <div style={{ background: 'var(--red-soft)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
             <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--red)', marginBottom: 2 }}>📉 TOUGHEST</div>
-            <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{weekLabelForBest(worst.week_of, weeks)}</div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{weekLabelForBest(worst.week_of)}</div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.78rem', color: 'var(--text-2)' }}>
               ${worst.total_spent?.toFixed(2)}
             </div>
@@ -255,7 +253,7 @@ function MonthBlock({ monthStr, weeks }) {
         <div className="card-title" style={{ marginBottom: 8 }}>Weeks</div>
         {[...weeks]
           .sort((a, b) => b.week_of.localeCompare(a.week_of))
-          .map((w) => <WeekCard key={w.week_of} week={w} allWeeksInMonth={weeks} />)
+          .map((w) => <WeekCard key={w.week_of} week={w} />)
         }
       </div>
     </div>
@@ -309,7 +307,7 @@ export default function HistoryScreen() {
                 </div>
               </div>
               {byMonth[m].map((w) => (
-                <WeekCard key={w.week_of} week={w} allWeeksInMonth={byMonth[m]} />
+                <WeekCard key={w.week_of} week={w} />
               ))}
             </div>
           )
