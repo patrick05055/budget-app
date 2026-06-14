@@ -109,16 +109,24 @@ export async function archiveWeek(log, expenses, spendCats) {
 }
 
 export async function getAIInsights(prompt) {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_KEY
+  if (!apiKey) return 'AI insights unavailable — API key not configured.'
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-allow-browser': 'true',
+    },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
   const json = await res.json()
+  if (json.error) return `Error: ${json.error.message}`
   return json.content?.filter((b) => b.type === 'text').map((b) => b.text).join('\n') || 'No response.'
 }
 
