@@ -149,7 +149,9 @@ Return exactly this JSON structure:
   "actions": [
     { "icon": "✅", "title": "Action title", "detail": "Specific action to take next week with target amount." }
   ],
-  "comparison": "One sentence comparing this week to typical spending patterns or prior weeks if data exists. If no prior data, give a benchmark comparison instead."
+  "projected_savings": "If the user follows all 3 actions next week, estimate how much they could save vs this week in one sentence.",
+  "benchmark": "Compare their spending to a typical person earning ~$584/week. Be specific with percentages or dollar amounts.",
+  "comparison": "One sentence comparing this week to typical spending patterns or prior weeks if data exists."
 }
 
 Grade scale: A = under 90% of budget, B = 90-100%, C = 100-120%, D = 120-150%, F = over 150%.
@@ -180,6 +182,8 @@ Return exactly this JSON structure:
   "actions": [
     { "icon": "✅", "title": "Action title", "detail": "Specific goal for next month with target amount." }
   ],
+  "projected_savings": "Based on this month's patterns, estimate how much they could save next month if they follow the actions. Be specific.",
+  "benchmark": "Compare their monthly spending to a typical person earning ~$584/week ($2,532/month). Reference standard budgeting guidelines.",
   "comparison": "One sentence comparing best vs worst week and what drove the difference."
 }
 
